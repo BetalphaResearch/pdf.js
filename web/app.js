@@ -129,6 +129,7 @@ let PDFViewerApplication = {
   isViewerEmbedded: (window.parent !== window),
   url: '',
   baseUrl: '',
+  filename: null,
   externalServices: DefaultExternalServices,
   _boundEvents: {},
   contentDispositionFilename: null,
@@ -137,6 +138,13 @@ let PDFViewerApplication = {
   async initialize(appConfig) {
     this.preferences = this.externalServices.createPreferences();
     this.appConfig = appConfig;
+
+    if (typeof PDFJSDev === 'undefined' || PDFJSDev.test('GENERIC')) {
+      let queryString = document.location.search.substring(1);
+      let params = parseQueryString(queryString);
+      this.filename = params.filename;
+      params.locale && AppOptions.set('locale', params.locale);
+    }
 
     await this._readPreferences();
     await this._parseHashParameters();
@@ -695,7 +703,7 @@ let PDFViewerApplication = {
     let url = this.baseUrl;
     // Use this.url instead of this.baseUrl to perform filename detection based
     // on the reference fragment as ultimate fallback if needed.
-    let filename = this.contentDispositionFilename ||
+    let filename = this.contentDispositionFilename || this.filename ||
       getPDFFileNameFromURL(this.url);
     let downloadManager = this.downloadManager;
     downloadManager.onerror = (err) => {
